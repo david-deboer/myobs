@@ -1,0 +1,12 @@
+satpos: satpos.o sgp4unit.o sgp4io.o sgp4ext.o
+	g++ satpos.o sgp4unit.o sgp4io.o sgp4ext.o -o satpos
+satpos.o : satpos.c sgp4ext.h sgp4io.h sgp4unit.h satpos.h
+	g++ -c satpos.c
+sgp4unit.o : sgp4unit.cpp sgp4unit.h
+	g++ -c sgp4unit.cpp
+sgp4ext.o : sgp4ext.cpp sgp4ext.h
+	g++ -c sgp4ext.cpp
+sgp4io.o : sgp4io.cpp sgp4io.h
+	g++ -c sgp4io.cpp
+clean:
+	rm -f satpos.o sgp4.o sgp4unit.o sgp4io.o sgp4ext.o
