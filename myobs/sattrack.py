@@ -1,9 +1,8 @@
 import numpy as np
 from argparse import Namespace
-from datetime import datetime
 from . import ephem, observer
 import astropy.units as u
-import astropy.time as Time
+from astropy.time import Time
 
 
 class Track(ephem.BaseEphem):
@@ -30,8 +29,7 @@ class Track(ephem.BaseEphem):
                 for i, sp in enumerate(self.satpar):
                     getattr(self, sp).append(df[i])
                 yr, mn, dy = int(data[14]), int(data[15]), int(data[16])
-                tod = line[199:].strip()
-                self.times.append(Time(f"{yr}-{mn}-{dy}T{tod}"))
+                self.times.append(Time(f"{yr}-{mn:02d}-{dy:02d}T{data[17].strip()}"))
         for sp in self.satpar:
             if sp == 'since':
                 self.since = np.array(self.since) * 60.0  # convert to sec
@@ -39,6 +37,7 @@ class Track(ephem.BaseEphem):
                 setattr(self, sp, np.array(getattr(self, sp))*1000.0*u.m)  # convert to m
             elif sp in ['dx', 'dy', 'dz']:
                 setattr(self, sp, np.array(getattr(self, sp))*1000.0*u.m/u.s)  # convert to m
+        self.times = Time(self.times)
         self.parse_header()
 
     def parse_header(self, default_epoch='2019-04-29 '):

@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
   double p, a, ecc, incl, node, argp, nu, m, arglat, truelon, lonper;
   double sec,  jd, rad, tsince, startmfe, stopmfe, deltamin, jdstart, jdstop;
   double tumin, mu, radiusearthkm, xke, j2, j3, j4, j3oj2;
-  int  year, mon, day, hr, min;
+  int  year, mon, day, hr, min, isec, msec;
   char longstr1[130];
   typedef char str3[4];
   char longstr2[130];
@@ -132,9 +132,9 @@ int main(int argc, char *argv[])
   stopmfe  = (jdstop - satrec.jdsatepoch) * 1440.0;
   deltamin = obs.tstep;
   if (startmfe < 0.0)
-    printf("WARNING: TLEs start after observing epoch (%lf days).\n",tsince/1440.0);
+    printf("WARNING: TLEs start after observing epoch (%lf days).\n",startmfe/1440.0);
   if (startmfe > 43200.0)
-    printf("WARNING: TLEs are over a month old (%lf days).\n",tsince/1440.0);
+    printf("WARNING: TLEs are over a month old (%lf days).\n",startmfe/1440.0);
   // call the propagator to get the initial state vector value
   sgp4 (whichconst, satrec,  0.0, ro,  vo);
 
@@ -191,8 +191,11 @@ int main(int argc, char *argv[])
       lngconv[0] = lngconv[1];
       fprintf(outfile, " %16.8f %16.8f %16.8f %16.8f %12.9f %12.9f %12.9f", tsince,ro[0],ro[1],ro[2],vo[0],vo[1],vo[2]);
       rv2coe(ro, vo, mu, p, a, ecc, incl, node, argp, nu, m, arglat, truelon, lonper);
-      fprintf(outfile, " %14.6f %8.6f %10.5f %10.5f %10.5f %10.5f %10.5f %5i%3i%3i %2i:%2i:%9.6f\n",
-        a, ecc, incl*rad, node*rad, argp*rad, nu*rad, m*rad,year,mon,day,hr,min,sec);
+      isec = floor(sec);
+      msec = int((sec - isec)*1000);
+      isec = int(isec);
+      fprintf(outfile, " %14.6f %8.6f %10.5f %10.5f %10.5f %10.5f %10.5f %5i%3i%3i %02i:%02i:%02i.%i\n",
+        a, ecc, incl*rad, node*rad, argp*rad, nu*rad, m*rad,year,mon,day,hr,min,isec,msec);
     }
   }
   printf("\nOutput to %s\n", outname);

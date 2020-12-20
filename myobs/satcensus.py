@@ -149,15 +149,21 @@ def find_viewable(loc, trackfilelist='spactive.list', path='output', verbose=Fal
     print(f"NOTVIEWABLE: {count.notviewable}")
 
 
-def satpos_script(fname, tot):
+def satpos_script(tlefile):
     """
     Write a bash script to check entry numbers within a tle file repetitiously via satpos.
-
-    E.g. generate_check_all(active, 3262)
     """
-    with open('check_all.sh', 'w') as fp:
+    if '.' not in tlefile:
+        tlefile = f"{tlefile}.tle"
+    tprename = tlefile.split('.')[0]
+    tot = 0
+    with open(tlefile, 'r') as fp:
+        for line in fp:
+            tot += 1
+    tot = int(tot / 3.0)
+    with open(f'satpos_{tprename}.sh', 'w') as fp:
         for i in range(tot):
-            print(f"satpos {fname} {i+1}", file=fp)
+            print(f"satpos {tprename} {i+1}", file=fp)
 
 
 def generate_complete_set(epoch=None, path='tle', fmname='master.dat'):
