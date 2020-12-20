@@ -161,7 +161,9 @@ def satpos_script(tlefile):
         for line in fp:
             tot += 1
     tot = int(tot / 3.0)
-    with open(f'satpos_{tprename}.sh', 'w') as fp:
+    outfile = f'satpos_{tprename}.sh'
+    print(f"Writing {tot} entries to {outfile}.")
+    with open(outfile, 'w') as fp:
         for i in range(tot):
             print(f"satpos {tprename} {i+1}", file=fp)
 
