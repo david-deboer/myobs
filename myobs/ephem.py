@@ -127,7 +127,14 @@ class BaseEphem:
 
         Usage is to call e.g. visible_doppler = self.vis(self.doppler)
         """
-        varr = np.array(arr)
+        arr = u.Quantity(arr)
+        try:
+            arrunit = arr.unit  # noqa
+            varr = arr.value
+        except AttributeError:
+            varr = np.array(arr)
+        except:
+            raise ValueError("EPHEM137:THIS WILL ERROR AGAIN!")
         varr[np.where(self.el < horizon)] = val
         return varr
 

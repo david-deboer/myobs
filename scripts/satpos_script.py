@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 from myobs import satcensus
 import argparse
 

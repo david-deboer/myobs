@@ -8,9 +8,9 @@ from astropy.time import Time
 class Track(ephem.BaseEphem):
 
     def __init__(self, fname):
+        self.param.append('since')  # add variable you want to include in the class - must be first
         self.fname = fname
-        self.param.append('since')  # add any variable you want to include in the class
-        self.initall()
+        super().__init__()
         self.read_file()
 
     def read_file(self):
@@ -104,20 +104,10 @@ class Track(ephem.BaseEphem):
         self.az = 90.0*u.deg - alp
         self.az[np.where(alp > 90*u.deg)] = 360.0*u.deg + self.az[np.where(alp > 90*u.deg)]
 
-    def vis(self, arr, val=0.0, horizon=0.0):
-        """
-        Get filter for visible above horizon.  Those below the horizon are set to val.
-
-        Usage is to call e.g. visible_doppler = self.vis(self.doppler)
-        """
-        varr = np.array(arr)
-        varr[np.where(self.el < horizon)] = val
-        return varr
-
     def rates(self, f=982E6):
         self.freq = f
         self.V = (self.xdot*self.R.x + self.ydot*self.R.y + self.zdot*self.R.z) / self.D
-        self.doppler = (np.array(self.V) / ephem.C0) * f
+        self.doppler = (np.array(self.V) / self.C0) * f
         self.drift = [0.0]
         for i in range(1, len(self.doppler)):
             dt = self.since[i] - self.since[i-1]
