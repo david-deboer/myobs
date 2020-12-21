@@ -3,9 +3,7 @@ from astropy.coordinates import Angle
 import numpy as np
 from . import dateutil
 from astropy.convolution import convolve, Gaussian1DKernel
-
-
-C0 = 299792458.0  # m/s
+from astropy import constants as C
 
 
 def to_Angle(val, unit='degree'):
@@ -34,10 +32,15 @@ class BaseEphem:
             dx, dy, dz:  m/s (Quantity)
         """
         self.initall()
+        self._E = None  # Class archive for interp
+        self.C0 = C.c  # Just to use import in this module
 
-    def initall(self):
+    def initall(self, **kwargs):
         for par in self.param:
-            setattr(self, par, [])
+            if par in kwargs.keys():
+                setattr(self, par, kwargs[par])
+            else:
+                setattr(self, par, [])
 
     def to_Time(self, times='times', toffset=None):
         """
@@ -57,6 +60,43 @@ class BaseEphem:
         if angv is None:
             angv = getattr(self, ang)
         setattr(self, ang, to_Angle(angv, angle_unit))
+
+    def interp(self, par, times):
+        """
+        Interpolate attribute par onto times.
+
+        par : str
+            string of the attribute to use
+        times : Time
+            times to be interpolated onto.
+        """
+        clpar = getattr(self._E, f"{par}")
+        if not len(clpar):
+            return clpar
+        try:
+            parunit = clpar.unit
+        except AttributeError:
+            return np.interp(times.jd, self._E.times.jd, clpar)
+        return u.Quantity(np.interp(times.jd, self._E.times.jd, clpar), parunit)
+
+    def reset_base(self):
+        self._E = None
+
+    def at(self, times=None):
+        """
+        Put all data at "times".  None to initial data.
+        """
+        if self._E is None:  # Set ephem archive data
+            for par in self.param:
+                setattr(self._E, par, getattr(self, par))
+        if times is None:
+            for par in self.param:
+                setattr(self, par, getattr(self._E, par))
+        else:
+            self.to_Time(times)
+            for par in self.param:
+                if par != 'times':
+                    setattr(self, par, self.interp(par, times))
 
     def calc_dt(self):
         """

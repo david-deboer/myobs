@@ -5,11 +5,8 @@ from . import ephem, observer
 from argparse import Namespace
 
 
-KB = 1.38E-23
-
-
 def noisedist(Tsys, bw, tau, N):
-    p = KB * Tsys * bw
+    p = ephem.C.k_B * Tsys * bw
     s = np.sqrt(bw * tau)
     #  pn = np.random.rayleigh(p/s, N)
     pn = np.fabs(np.random.normal(p, p/s, N))
@@ -83,7 +80,7 @@ class Moving(ephem.BaseEphem):
 
     def calc_doppler_drift(self, smooth=10, drift_smooth=10):
         vel = self._smrt(self.dD, smooth)  # additional smoothing in velocity
-        self.doppler = (vel/ephem.C0) * self.freq
+        self.doppler = (vel/ephem.C.c) * self.freq
         self.drift = [0.0]
         for i in range(1, len(self.doppler)):
             self.drift.append(self.doppler[i].value-self.doppler[i-1].value)
@@ -148,6 +145,7 @@ class Moving(ephem.BaseEphem):
             speed = self.total_distance / total_time
         self.traj = Namespace(utc=np.array([]), lon=np.array([]),
                               lat=np.array([]), alt=np.array([]))
+        self.waypoint_indices = []
         for i in range(1, len(lon)):
             if calc_utc:
                 dt_waypt = self.waypt.distance[i] / speed
@@ -172,14 +170,15 @@ class Moving(ephem.BaseEphem):
             self.traj.lat = np.append(self.traj.lat, np.arctan2(_z, np.sqrt(_x**2+_y**2)))
             self.traj.lon = np.append(self.traj.lon, np.arctan2(_y, _x))
             self.traj.alt = np.append(self.traj.alt, alt[i-1] + _f * _altinc)
+            self.waypoint_indices.append(len(self.traj.utc)-1)
         self.waypt.utc = utc
         self.traj.lon = np.rad2deg(self.traj.lon)
         self.traj.lat = np.rad2deg(self.traj.lat)
         self.traj.loc = EarthLocation(lon=self.traj.lon*u.deg, lat=self.traj.lat*u.deg,
                                       height=self.traj.alt*u.m)
-        self.dx = self.traj.loc.x - self.obs.loc.x  # dx NOT dx/dt
-        self.dy = self.traj.loc.y - self.obs.loc.y  # "
-        self.dz = self.traj.loc.z - self.obs.loc.z  # "
+        delta_x = self.traj.loc.x - self.obs.loc.x
+        delta_y = self.traj.loc.y - self.obs.loc.y
+        delta_z = self.traj.loc.z - self.obs.loc.z
         cosang = ((self.traj.loc.x*self.obs.loc.x +
                    self.traj.loc.y*self.obs.loc.y +
                    self.traj.loc.z*self.obs.loc.z) /
@@ -187,7 +186,7 @@ class Moving(ephem.BaseEphem):
                    np.sqrt(self.obs.loc.x**2 + self.obs.loc.y**2 + self.obs.loc.z**2)))
         rtraj = np.sqrt(self.traj.loc.x**2 + self.traj.loc.y**2 + self.traj.loc.z**2)
         robs = np.sqrt(self.obs.loc.x**2 + self.obs.loc.y**2 + self.obs.loc.z**2)
-        self.D = np.sqrt(self.dx**2 + self.dy**2 + self.dz**2)
+        self.D = np.sqrt(delta_x**2 + delta_y**2 + delta_z**2)
         self.el = np.arcsin((rtraj * cosang - robs)/self.D)
         self.utc = self.traj.utc
         self.dt = np.array([dt] * len(self.traj.utc)) * u.second
@@ -211,7 +210,7 @@ class Local(ephem.BaseEphem):
         self.E, self.N, self.H, self.R = E, N, H, R
         self.X2 = E*E + N*N + H*H + R*R
 
-    def ephem(self, cls, smooth=None):
+    def trajectory(self, cls, smooth=None):
         for par in self.param:
             setattr(self, par, getattr(cls, par))
         self.D = np.sqrt(self.X2 - 2.0*self.R*(self.E*np.cos(self.az)*np.cos(self.el) +
@@ -220,7 +219,7 @@ class Local(ephem.BaseEphem):
         self.dbydt('D', smooth)
 
     def calc_doppler_drift(self):
-        self.doppler = (self.dD/ephem.C0) * self.freq
+        self.doppler = (self.dD/ephem.C.c) * self.freq
         self.drift = [0.0]
         for i in range(1, len(self.doppler)):
             self.drift.append(self.doppler[i].value-self.doppler[i-1].value)
