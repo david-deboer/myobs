@@ -38,23 +38,23 @@ class Horizons(ephem.BaseEphem):
                 self.dec.append(sn*(dgr + amn/60 + asc/3600))
                 # Get range and velocity
                 self.D.append(ephem.C.au * float(data[10]))
-                self.dD.append(1000.0 * float(data[11]))
+                self.Ddot.append(1000.0 * float(data[11]))
         self.times = Time(self.times)
         self.to_Angle('ra', angle_unit='hourangle')
         self.to_Angle('dec', angle_unit='degree')
-        self.D, self.dD = np.array(self.D)*u.m, np.array(self.dD)*(u.m/u.s)
+        self.D, self.Ddot = np.array(self.D)*u.m, np.array(self.Ddot)*(u.m/u.s)
         self.x = self.D * np.cos(self.ra) * np.cos(self.dec)
         self.y = self.D * np.sin(self.ra) * np.sin(self.dec)
         self.z = self.D * np.sin(self.dec)
         smoothfactor = int(len(self.times) / 20.0)
         self.dbydt('ra', smoothfactor, True)
         self.dbydt('dec', smoothfactor, False)
-        self.dx = (self.D * (-np.sin(self.ra)*np.cos(self.dec)*self.dra.to('radian/s') -
-                   np.cos(self.ra)*np.sin(self.dec)*self.ddec.to('radian/s')))
-        self.dy = (self.D * (np.cos(self.ra)*np.cos(self.dec)*self.dra.to('radian/s') -
-                   np.sin(self.ra)*np.sin(self.dec)*self.ddec.to('radian/s')))
-        self.dz = self.D * np.cos(self.dec)*self.ddec.to('radian/s')
+        self.xdot = (self.D * (-np.sin(self.ra)*np.cos(self.dec)*self.radot.to('radian/s') -
+                     np.cos(self.ra)*np.sin(self.dec)*self.decdot.to('radian/s')))
+        self.ydot = (self.D * (np.cos(self.ra)*np.cos(self.dec)*self.radot.to('radian/s') -
+                     np.sin(self.ra)*np.sin(self.dec)*self.decdot.to('radian/s')))
+        self.zdot = self.D * np.cos(self.dec)*self.decdot.to('radian/s')
         # Cast to m/s (as opposed to m rad / s)
-        self.dx = self.dx.value * u.m / u.second
-        self.dy = self.dy.value * u.m / u.second
-        self.dz = self.dz.value * u.m / u.second
+        self.xdot = self.xdot.value * u.m / u.second
+        self.ydot = self.ydot.value * u.m / u.second
+        self.zdot = self.zdot.value * u.m / u.second

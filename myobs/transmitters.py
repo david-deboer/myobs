@@ -79,7 +79,7 @@ class Moving(ephem.BaseEphem):
         self.obs = observer.Pointing(name=name, lat=lat, lon=lon, alt=alt)
 
     def calc_doppler_drift(self, smooth=10, drift_smooth=10):
-        vel = self._smrt(self.dD, smooth)  # additional smoothing in velocity
+        vel = self._smrt(self.Ddot, smooth)  # additional smoothing in velocity
         self.doppler = (vel/ephem.C.c) * self.freq
         self.drift = [0.0]
         for i in range(1, len(self.doppler)):
@@ -219,7 +219,7 @@ class Local(ephem.BaseEphem):
         self.dbydt('D', smooth)
 
     def calc_doppler_drift(self):
-        self.doppler = (self.dD/ephem.C.c) * self.freq
+        self.doppler = (self.Ddot/ephem.C.c) * self.freq
         self.drift = [0.0]
         for i in range(1, len(self.doppler)):
             self.drift.append(self.doppler[i].value-self.doppler[i-1].value)

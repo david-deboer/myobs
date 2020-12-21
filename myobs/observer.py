@@ -127,19 +127,19 @@ class Pointing(ephem.BaseEphem):
         self.el = ptg.transform_to(self.altaz).alt
 
     def geocentric(self, voffset=None, isolate_offset=False):
-        self.gcrs = Namespace(r=None, v=None, dD=None, acc=None)
+        self.gcrs = Namespace(r=None, v=None, Ddot=None, acc=None)
         if isolate_offset:
             if voffset is None:
                 raise ValueError("Can't isolate 'None' offset for geocentric.")
-            self.gcrs.dD = voffset
+            self.gcrs.Ddot = voffset
         else:
             self.gcrs.r, self.gcrs.v = self.loc.get_gcrs_posvel(self.times)
-            self.gcrs.dD = (np.cos(self.ra)*np.cos(self.dec)*self.gcrs.v.x +
-                            np.sin(self.ra)*np.cos(self.dec)*self.gcrs.v.y +
-                            np.sin(self.dec)*self.gcrs.v.z)
+            self.gcrs.Ddot = (np.cos(self.ra)*np.cos(self.dec)*self.gcrs.v.x +
+                              np.sin(self.ra)*np.cos(self.dec)*self.gcrs.v.y +
+                              np.sin(self.dec)*self.gcrs.v.z)
             if voffset is not None:
-                self.gcrs.dD += voffset
-        self.gcrs.acc = np.diff(self.gcrs.dD.value) / self.dt[1:]
+                self.gcrs.Ddot += voffset
+        self.gcrs.acc = np.diff(self.gcrs.Ddot.value) / self.dt[1:]
         self.gcrs.acc = np.insert(self.gcrs.acc, 0, self.gcrs.acc[0])
 
     def barycentric(self, baryfile='barycenter.dat'):
@@ -152,14 +152,14 @@ class Pointing(ephem.BaseEphem):
         # # But instead for now...
         print("EPH235:  Be sure to check dates of barycenter file.")
         sun = horizons.Horizons(baryfile)
-        self.icrs = Namespace(v=Namespace(x=None, y=None, z=None), dDdt=None, acc=[0.0])
-        self.icrs.v.x = self.gcrs.v.x + sun.interp('dx', self.times)
-        self.icrs.v.y = self.gcrs.v.y + sun.interp('dy', self.times)
-        self.icrs.v.z = self.gcrs.v.z + sun.interp('dz', self.times)
-        self.icrs.dDdt = (np.cos(self.ra)*np.cos(self.dec)*self.icrs.v.x +
+        self.icrs = Namespace(v=Namespace(x=None, y=None, z=None), Ddot=None, acc=[0.0])
+        self.icrs.v.x = self.gcrs.v.x + sun.interp('xdot', self.times)
+        self.icrs.v.y = self.gcrs.v.y + sun.interp('ydot', self.times)
+        self.icrs.v.z = self.gcrs.v.z + sun.interp('zdot', self.times)
+        self.icrs.Ddot = (np.cos(self.ra)*np.cos(self.dec)*self.icrs.v.x +
                           np.sin(self.ra)*np.cos(self.dec)*self.icrs.v.y +
                           np.sin(self.dec)*self.icrs.v.z)
-        self.icrs.acc = np.diff(self.icrs.dDdt) / self.dt[1:]
+        self.icrs.acc = np.diff(self.icrs.Ddot) / self.dt[1:]
         self.icrs.acc = np.insert(self.icrs.acc, 0, self.icrs.acc[0])
 
     def xyz2pointing(self, x, y, z, times=None, toffset=None, el=None):

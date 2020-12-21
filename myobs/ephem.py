@@ -18,8 +18,8 @@ def to_Time(times, toffset=None):
 
 
 class BaseEphem:
-    param = ['times', 'ra', 'dec', 'az', 'el', 'x', 'y', 'z', 'D',
-             'dt', 'dra', 'ddec', 'daz', 'del', 'dx', 'dy', 'dz', 'dD']
+    param = ['times', 'ra', 'dec', 'az', 'el', 'x', 'y', 'z', 'D', 'dt',
+             'radot', 'decdot', 'azdot', 'eldot', 'xdot', 'ydot', 'zdot', 'Ddot']
 
     def __init__(self):
         """
@@ -27,9 +27,9 @@ class BaseEphem:
             times :  Time
             dt :  np.array
             ra, dec, az, el:  Angle
-            dra, ddec, daz, delev:  deg/sec (Quantity)
+            radot, decdot, azdot, eldot:  deg/sec (Quantity)
             x, y, z:  m (Quantity)
-            dx, dy, dz:  m/s (Quantity)
+            xdot, ydot, zdot, Ddot:  m/s (Quantity)
         """
         self.initall()
         self._E = None  # Class archive for interp
@@ -134,7 +134,7 @@ class BaseEphem:
     def dbydt(self, par, smooth=None, unwrap=False):
         if self.dt is None or len(self.dt) != len(getattr(self, par)):
             self.calc_dt()
-        deriv = f"d{par}"
+        deriv = f"{par}dot"
         setattr(self, deriv, [0.0])
         if unwrap:
             _param = np.unwrap(getattr(self, par))
