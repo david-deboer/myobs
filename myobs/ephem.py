@@ -90,7 +90,7 @@ class BaseEphem:
 
     def at(self, times=None):
         """
-        Put all data at "times".  None to initial data.
+        Put all data at "times".  None to self._E data.
         """
         if self._E is None:  # Set ephem archive data
             self.reset_base()

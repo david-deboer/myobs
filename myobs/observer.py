@@ -152,6 +152,9 @@ class Pointing(ephem.BaseEphem):
         # # But instead for now...
         print("EPH235:  Be sure to check dates of barycenter file.")
         sun = horizons.Horizons(baryfile)
+        if sun.times[0] > self.times[0]:
+            print("Barycenter data begins after pointing data.")
+        
         self.icrs = Namespace(v=Namespace(x=None, y=None, z=None), Ddot=None, acc=[0.0])
         self.icrs.v.x = self.gcrs.v.x + sun.interp('xdot', self.times)
         self.icrs.v.y = self.gcrs.v.y + sun.interp('ydot', self.times)
