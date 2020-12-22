@@ -4,6 +4,7 @@ import numpy as np
 from . import dateutil
 from astropy.convolution import convolve, Gaussian1DKernel
 from astropy import constants as C
+from argparse import Namespace
 
 
 def to_Angle(val, unit='degree'):
@@ -70,6 +71,8 @@ class BaseEphem:
         times : Time
             times to be interpolated onto.
         """
+        if self._E is None:
+            self.reset_base()
         clpar = getattr(self._E, f"{par}")
         if not len(clpar):
             return clpar
@@ -80,15 +83,17 @@ class BaseEphem:
         return u.Quantity(np.interp(times.jd, self._E.times.jd, clpar), parunit)
 
     def reset_base(self):
-        self._E = None
+        if self._E is None:
+            self._E = Namespace()
+        for par in self.param:
+            setattr(self._E, par, getattr(self, par))
 
     def at(self, times=None):
         """
         Put all data at "times".  None to initial data.
         """
         if self._E is None:  # Set ephem archive data
-            for par in self.param:
-                setattr(self._E, par, getattr(self, par))
+            self.reset_base()
         if times is None:
             for par in self.param:
                 setattr(self, par, getattr(self._E, par))
@@ -127,14 +132,7 @@ class BaseEphem:
 
         Usage is to call e.g. visible_doppler = self.vis(self.doppler)
         """
-        arr = u.Quantity(arr)
-        try:
-            arrunit = arr.unit  # noqa
-            varr = arr.value
-        except AttributeError:
-            varr = np.array(arr)
-        except:
-            raise ValueError("EPHEM137:THIS WILL ERROR AGAIN!")
+        varr = np.array(arr)
         varr[np.where(self.el < horizon)] = val
         return varr
 

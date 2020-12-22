@@ -13,7 +13,7 @@ mon = {'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '
 
 class Horizons(ephem.BaseEphem):
     def __init__(self, fname):
-        self.initall()
+        super().__init__()
         self.read(fname)
 
     def read(self, fname):
@@ -42,7 +42,8 @@ class Horizons(ephem.BaseEphem):
         self.times = Time(self.times)
         self.to_Angle('ra', angle_unit='hourangle')
         self.to_Angle('dec', angle_unit='degree')
-        self.D, self.Ddot = np.array(self.D)*u.m, np.array(self.Ddot)*(u.m/u.s)
+        self.D = u.Quantity(self.D)
+        self.Ddot = np.array(self.Ddot)*(u.m/u.s)
         self.x = self.D * np.cos(self.ra) * np.cos(self.dec)
         self.y = self.D * np.sin(self.ra) * np.sin(self.dec)
         self.z = self.D * np.sin(self.dec)
