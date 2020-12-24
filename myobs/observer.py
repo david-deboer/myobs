@@ -126,21 +126,20 @@ class Pointing(ephem.BaseEphem):
         self.az = ptg.transform_to(self.altaz).az
         self.el = ptg.transform_to(self.altaz).alt
 
-    def geocentric(self, voffset=None, isolate_offset=False):
-        self.gcrs = Namespace(r=None, v=None, Ddot=None, acc=None)
-        if isolate_offset:
-            if voffset is None:
-                raise ValueError("Can't isolate 'None' offset for geocentric.")
-            self.gcrs.Ddot = voffset
-        else:
-            self.gcrs.r, self.gcrs.v = self.loc.get_gcrs_posvel(self.times)
-            self.gcrs.Ddot = (np.cos(self.ra)*np.cos(self.dec)*self.gcrs.v.x +
-                              np.sin(self.ra)*np.cos(self.dec)*self.gcrs.v.y +
-                              np.sin(self.dec)*self.gcrs.v.z)
-            if voffset is not None:
-                self.gcrs.Ddot += voffset
-        self.gcrs.acc = np.diff(self.gcrs.Ddot.value) / self.dt[1:]
-        self.gcrs.acc = np.insert(self.gcrs.acc, 0, self.gcrs.acc[0])
+    def geocentric(self, roffset=None, voffset=None):
+        self.gcrs = Namespace(r=None, v=None, Ddot=None, Ddotdot=None)
+        self.gcrs.r, self.gcrs.v = self.loc.get_gcrs_posvel(self.times)
+        self.gcrs.D = (np.cos(self.ra)*np.cos(self.dec)*self.gcrs.r.x +
+                       np.sin(self.ra)*np.cos(self.dec)*self.gcrs.r.y +
+                       np.sin(self.dec)*self.gcrs.r.z)
+        self.gcrs.Ddot = (np.cos(self.ra)*np.cos(self.dec)*self.gcrs.v.x +
+                          np.sin(self.ra)*np.cos(self.dec)*self.gcrs.v.y +
+                          np.sin(self.dec)*self.gcrs.v.z)
+        if roffset is not None:
+            self.gcrs.D = self.gcrs.D + roffset
+        if voffset is not None:
+            self.gcrs.Ddot = self.gcrs.Ddot + voffset
+        self.dbydt('gcrs.Ddot', smooth=None, unwrap=False)
 
     def barycentric(self, baryfile='barycenter.dat'):
         # # Ideally do something like this:
@@ -150,20 +149,20 @@ class Pointing(ephem.BaseEphem):
         #     self.altaz.transform_to(ICRS(obstime=self.times))
         # self.icrs.r, self.icrs.v = self.loc.get_icrs_posvel(self.times)
         # # But instead for now...
-        print("EPH235:  Be sure to check dates of barycenter file.")
-        sun = horizons.Horizons(baryfile)
-        if sun.times[0] > self.times[0]:
-            print("Barycenter data begins after pointing data.")
-        
-        self.icrs = Namespace(v=Namespace(x=None, y=None, z=None), Ddot=None, acc=[0.0])
-        self.icrs.v.x = self.gcrs.v.x + sun.interp('xdot', self.times)
-        self.icrs.v.y = self.gcrs.v.y + sun.interp('ydot', self.times)
-        self.icrs.v.z = self.gcrs.v.z + sun.interp('zdot', self.times)
+        bary = horizons.Horizons(baryfile)
+        if not bary.is_geocentric:
+            raise ValueError("Barycenter file should be referenced to geocentric.")
+        if bary.times[0] > self.times[0]:
+            print("Barycenter data begins after pointing data - CHECK MORE.")
+        self.icrs = Namespace(v=Namespace(x=None, y=None, z=None), Ddot=None, Ddotdot=[0.0])
+        bary.at(self.times)
+        self.icrs.v.x = self.gcrs.v.x + bary.xdot
+        self.icrs.v.y = self.gcrs.v.y + bary.ydot
+        self.icrs.v.z = self.gcrs.v.z + bary.zdot
         self.icrs.Ddot = (np.cos(self.ra)*np.cos(self.dec)*self.icrs.v.x +
                           np.sin(self.ra)*np.cos(self.dec)*self.icrs.v.y +
                           np.sin(self.dec)*self.icrs.v.z)
-        self.icrs.acc = np.diff(self.icrs.Ddot) / self.dt[1:]
-        self.icrs.acc = np.insert(self.icrs.acc, 0, self.icrs.acc[0])
+        self.dbydt('icrs.Ddot', smooth=None, unwrap=False)
 
     def xyz2pointing(self, x, y, z, times=None, toffset=None, el=None):
         """

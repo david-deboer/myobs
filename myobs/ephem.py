@@ -20,7 +20,8 @@ def to_Time(times, toffset=None):
 
 class BaseEphem:
     param = ['times', 'ra', 'dec', 'az', 'el', 'x', 'y', 'z', 'D', 'dt',
-             'radot', 'decdot', 'azdot', 'eldot', 'xdot', 'ydot', 'zdot', 'Ddot']
+             'radot', 'decdot', 'azdot', 'eldot', 'xdot', 'ydot', 'zdot',
+             'Ddot', 'Ddotdot']
 
     def __init__(self):
         """
@@ -35,6 +36,7 @@ class BaseEphem:
         self.initall()
         self._E = None  # Class archive for interp
         self.C0 = C.c  # Just to use import in this module
+        self.au = C.au
 
     def initall(self, **kwargs):
         for par in self.param:
@@ -118,7 +120,7 @@ class BaseEphem:
             anit = arr.unit
         except AttributeError:
             anit = None
-        if smooth is not None:
+        if smooth:
             if anit is not None:
                 return u.Quantity(convolve(arr, Gaussian1DKernel(smooth), boundary='extend'), anit)
             else:
@@ -137,16 +139,21 @@ class BaseEphem:
         return varr
 
     def dbydt(self, par, smooth=None, unwrap=False):
-        if self.dt is None or len(self.dt) != len(getattr(self, par)):
+        if '.' in par:
+            ns = getattr(self, par.split('.')[0])
+            par = par.split('.')[1]
+        else:
+            ns = self
+        if self.dt is None or len(self.dt) != len(getattr(ns, par)):
             self.calc_dt()
         deriv = f"{par}dot"
-        setattr(self, deriv, [0.0])
+        setattr(ns, deriv, [0.0])
         if unwrap:
-            _param = np.unwrap(getattr(self, par))
+            _param = np.unwrap(getattr(ns, par))
         else:
-            _param = getattr(self, par)
+            _param = getattr(ns, par)
         _param = self._smrt(_param, smooth)
         for i, _pp in enumerate(_param[1:]):
-            getattr(self, deriv).append((_pp - _param[i])/self.dt[i+1])
-        getattr(self, deriv)[0] = getattr(self, deriv)[1]
-        setattr(self, deriv, u.Quantity(getattr(self, deriv)))
+            getattr(ns, deriv).append((_pp - _param[i])/self.dt[i+1])
+        getattr(ns, deriv)[0] = getattr(ns, deriv)[1]
+        setattr(ns, deriv, u.Quantity(getattr(ns, deriv)))
