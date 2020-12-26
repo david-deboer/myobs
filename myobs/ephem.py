@@ -3,7 +3,7 @@ from astropy.coordinates import Angle
 import numpy as np
 from . import dateutil
 from astropy.convolution import convolve, Gaussian1DKernel
-from astropy import constants as C
+from astropy import constants as Const
 from argparse import Namespace
 
 
@@ -35,8 +35,9 @@ class BaseEphem:
         """
         self.initall()
         self._E = None  # Class archive for interp
-        self.C0 = C.c  # Just to use import in this module
-        self.au = C.au
+        self.c0 = Const.c  # Get used constants handy
+        self.au = Const.au
+        self.ly = 1.0 * u.lyr.to('m')
 
     def initall(self, **kwargs):
         for par in self.param:
@@ -44,6 +45,16 @@ class BaseEphem:
                 setattr(self, par, kwargs[par])
             else:
                 setattr(self, par, [])
+
+    def elapsed(self, unit='hour'):
+        elpsd = self.times.jd.value - self.times[0].jd.value
+        if unit == 'hour':
+            elpsd *= 24.0
+        elif unit.startswith('m'):
+            elpsd *= (24.0 * 60.0)
+        elif unit.startswith('s'):
+            elpsd *= (24.0 * 3600.0)
+        return elpsd
 
     def to_Time(self, times='times', toffset=None):
         """

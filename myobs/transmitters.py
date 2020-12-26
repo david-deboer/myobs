@@ -6,7 +6,7 @@ from argparse import Namespace
 
 
 def noisedist(Tsys, bw, tau, N):
-    p = ephem.C.k_B * Tsys * bw
+    p = ephem.Const.k_B * Tsys * bw
     s = np.sqrt(bw * tau)
     #  pn = np.random.rayleigh(p/s, N)
     pn = np.fabs(np.random.normal(p, p/s, N))
@@ -30,7 +30,10 @@ def waterfall(t, Rxfreq, r, pwr=1.0/1000.0, Tsys=50.0, bw=1.0, minsmear=4.0):
     bw : float
         Bandwidth [Hz]
     """
-    Rxpwr = pwr / (4.0 * np.pi * r**2)
+    if r is None:
+        Rxpwr = pwr
+    else:
+        Rxpwr = pwr / (4.0 * np.pi * r**2)
     flo = 3.0*Rxfreq.min()/2.0 - Rxfreq.max()/2.0
     fhi = 3.0*Rxfreq.max()/2.0 - Rxfreq.min()/2.0
     numch = int((fhi-flo)/bw)
@@ -80,7 +83,7 @@ class Moving(ephem.BaseEphem):
 
     def calc_doppler_drift(self, smooth=10, drift_smooth=10):
         vel = self._smrt(self.Ddot, smooth)  # additional smoothing in velocity
-        self.doppler = (vel/ephem.C.c) * self.freq
+        self.doppler = (vel/self.c0) * self.freq
         self.drift = [0.0]
         for i in range(1, len(self.doppler)):
             self.drift.append(self.doppler[i].value-self.doppler[i-1].value)
@@ -219,7 +222,7 @@ class Local(ephem.BaseEphem):
         self.dbydt('D', smooth)
 
     def calc_doppler_drift(self):
-        self.doppler = (self.Ddot/ephem.C.c) * self.freq
+        self.doppler = (self.Ddot/self.c0) * self.freq
         self.drift = [0.0]
         for i in range(1, len(self.doppler)):
             self.drift.append(self.doppler[i].value-self.doppler[i-1].value)

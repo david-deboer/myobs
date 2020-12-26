@@ -107,7 +107,7 @@ class Track(ephem.BaseEphem):
     def rates(self, f=982E6):
         self.freq = f
         self.V = (self.xdot*self.R.x + self.ydot*self.R.y + self.zdot*self.R.z) / self.D
-        self.doppler = (np.array(self.V) / self.C0) * f
+        self.doppler = (np.array(self.V) / self.c0) * f
         self.drift = [0.0]
         for i in range(1, len(self.doppler)):
             dt = self.since[i] - self.since[i-1]
