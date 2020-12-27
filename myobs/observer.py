@@ -164,7 +164,7 @@ class Pointing(ephem.BaseEphem):
                           np.sin(self.dec)*self.icrs.v.z)
         self.dbydt('icrs.Ddot', smooth=None, unwrap=False)
 
-    def waterfall(self, f, ref='gc', r=None, pwr=1e-20, Tsys=50.0, bw=1.0, minsmear=4.0):
+    def waterfall(self, f, ref='gc', r=None, pwr=1.5e-21, Tsys=50.0, bw=1.0, minsmear=4.0):
         """
         Generate waterfall.
 
@@ -176,14 +176,14 @@ class Pointing(ephem.BaseEphem):
             gc/bc for geocentric/barycentric
         """
         from . import transmitters
-        if ref == 'gc':
+        if ref.startswith('g'):
             self.Ddot = self.gcrs.Ddot
         else:
             self.Ddot = self.icrs.Ddot
         self.doppler = (self.Ddot / self.c0) * f
         self.t = self.elapsed('sec')
-        self.ch, self.wf = transmitters.waterfall(t=self.elapsed('sec'), f=self.doppler, r=r,
-                                                  pwr=pwr, Tsys=Tsys, bw=bw, minsmear=minsmear)
+        self.ch, self.wf = transmitters.waterfall(t=self.t, Rxfreq=self.doppler.value,
+                                                  r=r, pwr=pwr, Tsys=Tsys, bw=bw, minsmear=minsmear)
 
     def xyz2pointing(self, x, y, z, times=None, toffset=None, el=None):
         """

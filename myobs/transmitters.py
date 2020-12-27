@@ -6,7 +6,7 @@ from argparse import Namespace
 
 
 def noisedist(Tsys, bw, tau, N):
-    p = ephem.Const.k_B * Tsys * bw
+    p = ephem.Const.k_B.value * Tsys * bw
     s = np.sqrt(bw * tau)
     #  pn = np.random.rayleigh(p/s, N)
     pn = np.fabs(np.random.normal(p, p/s, N))
@@ -31,7 +31,7 @@ def waterfall(t, Rxfreq, r, pwr=1.0/1000.0, Tsys=50.0, bw=1.0, minsmear=4.0):
         Bandwidth [Hz]
     """
     if r is None:
-        Rxpwr = pwr
+        Rxpwr = [pwr] * len(Rxfreq)
     else:
         Rxpwr = pwr / (4.0 * np.pi * r**2)
     flo = 3.0*Rxfreq.min()/2.0 - Rxfreq.max()/2.0
@@ -41,6 +41,7 @@ def waterfall(t, Rxfreq, r, pwr=1.0/1000.0, Tsys=50.0, bw=1.0, minsmear=4.0):
     chnum = (Rxfreq - flo)/bw + 0.5
     wf = []
     int_time = t[1] - t[0]
+    print(f"<Waterfall> Nch: {numch}, tau: {int_time}, N: {len(t)}")
     for i in range(len(Rxfreq)-1):
         pn = noisedist(Tsys, bw, int_time, numch)
         this_ch = int(chnum[i])
