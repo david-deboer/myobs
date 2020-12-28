@@ -60,6 +60,7 @@ class Waterfall:
         self.ch = np.linspace(self.flo, self.fhi, self.numch)
         self.wf = []
         self.tstart = t[0]
+        self.tstop = t[-1]
         self.int_time = t[1] - t[0]
         print("<Waterfall>")
         print(f"Nch: {self.numch}, tau: {self.int_time}, N: {len(t)}")
