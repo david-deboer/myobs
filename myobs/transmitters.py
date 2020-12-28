@@ -13,11 +13,6 @@ def noisedist(Tsys, bw, tau, N):
     return pn
 
 
-def waterfall(t, Rxfreq, r, pwr=1.0/1000.0, Tsys=50.0, bw=1.0, minsmear=4.0, flo=None, fhi=None):
-    return Waterfall(t=t, Rxfreq=Rxfreq, r=r, pwr=pwr, Tsys=Tsys, bw=bw, minsmear=minsmear,
-                     flo=flo, fhi=fhi)
-
-
 class Waterfall:
     def __init__(self, t, flo, fhi, bw=1.0, Tsys=50.0, minsmear=4.0):
         """
@@ -49,9 +44,9 @@ class Waterfall:
         self.tstart = t[0]
         self.tstop = t[-1]
         self.int_time = t[1] - t[0]
-        print("<Waterfall>")
-        print(f"Nch: {self.numch}, tau: {self.int_time}, N: {len(t)}")
-        print(f"flo: {self.flo}, fhi: {self.fhi}")
+        print("<Waterfall setup>")
+        print(f"\tNch: {self.numch}, Ntimes: {len(t)}")
+        print(f"\tflo: {self.flo:.2f} Hz, fhi: {self.fhi:.2f} Hz, int_time: {self.int_time:.1f} s")
         for i in range(len(t)):
             self.wf.append(noisedist(Tsys, bw, self.int_time, self.numch))
         self.wf = np.array(self.wf)
@@ -62,6 +57,7 @@ class Waterfall:
     def add_signal(self, f, p=1.5e-21, r=None, t=None, key=None):
         if key is None:
             key = self.auto_ctr
+        print(f"<Adding {key}>")
         self.auto_ctr += 1
         if t is None:
             t = self.tfull
@@ -97,7 +93,8 @@ class Waterfall:
     def plot_waterfall(self):
         import matplotlib.pyplot as plt
         plt.figure('waterfall')
-        plt.imshow(self.wf, extent=[self.flo, self.fhi, self.tfull[-1], self.tfull[0]])
+        plt.imshow(self.wf, extent=[self.flo, self.fhi, self.tfull[-1], self.tfull[0]],
+                   origin='upper')
         plt.xlabel('Channel offset (Hz)')
         plt.ylabel('Time (sec)')
         plt.axis('auto')

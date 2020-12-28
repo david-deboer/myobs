@@ -4,6 +4,9 @@ from myobs import dateutil
 
 
 def simple(f=982e6, dec=-62, lat=-32):
+    """
+    Do the simple geometric calculations for sanity check.
+    """
     print(f"Freq: {f/1e6:.1f} MHz")
     print(f"Lat: {lat:.2f} deg")
     print(f"Dec: {dec:.2f} deg")
