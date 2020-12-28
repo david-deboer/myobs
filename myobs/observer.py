@@ -89,6 +89,7 @@ class Pointing(ephem.BaseEphem):
                 self.name = name
         self.loc = EarthLocation(lat=lat*u.deg, lon=lon*u.deg, height=(alt+alt_offset)*u.m)
         self.altaz = None
+        self.wf = None
 
     def pointing(self, ra, dec, times=None, toffset=None, ra_unit=u.hourangle, dec_unit=u.deg):
         """
@@ -164,7 +165,8 @@ class Pointing(ephem.BaseEphem):
                           np.sin(self.dec)*self.icrs.v.z)
         self.dbydt('icrs.Ddot', smooth=None, unwrap=False)
 
-    def waterfall(self, f, ref='gc', r=None, pwr=1.5e-21, Tsys=50.0, bw=1.0, minsmear=4.0):
+    def waterfall(self, f, ref='gc', r=None, pwr=1.5e-21, Tsys=50.0, bw=1.0, minsmear=4.0,
+                  flo=None, fhi=None):
         """
         Generate waterfall.
 
@@ -182,8 +184,9 @@ class Pointing(ephem.BaseEphem):
             self.Ddot = self.icrs.Ddot
         self.doppler = (self.Ddot / self.c0) * f
         self.t = self.elapsed('sec')
-        self.ch, self.wf = transmitters.waterfall(t=self.t, Rxfreq=self.doppler.value,
-                                                  r=r, pwr=pwr, Tsys=Tsys, bw=bw, minsmear=minsmear)
+        self.wf = transmitters.Waterfall(t=self.t, Rxfreq=self.doppler.value,
+                                         r=r, pwr=pwr, Tsys=Tsys, bw=bw, minsmear=minsmear,
+                                         flo=flo, fhi=fhi)
 
     def xyz2pointing(self, x, y, z, times=None, toffset=None, el=None):
         """

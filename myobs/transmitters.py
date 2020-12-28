@@ -13,52 +13,98 @@ def noisedist(Tsys, bw, tau, N):
     return pn
 
 
-def waterfall(t, Rxfreq, r, pwr=1.0/1000.0, Tsys=50.0, bw=1.0, minsmear=4.0):
-    """
-    Parameters
-    ----------
-    t : list/array of float
-        Times in sec
-    Rxfreq : list/array of float
-        Doppler shifted frequency [Hz]
-    r : list/array of float
-        Distance to transmitter [m]
-    pwr : float
-        EIRP [W]
-    Tsys : float
-        System temperature [K]
-    bw : float
-        Bandwidth [Hz]
-    """
-    if r is None:
-        Rxpwr = [pwr] * len(Rxfreq)
-    else:
-        Rxpwr = pwr / (4.0 * np.pi * r**2)
-    flo = 3.0*Rxfreq.min()/2.0 - Rxfreq.max()/2.0
-    fhi = 3.0*Rxfreq.max()/2.0 - Rxfreq.min()/2.0
-    numch = int((fhi-flo)/bw)
-    ch = np.linspace(flo, fhi, numch)
-    chnum = (Rxfreq - flo)/bw + 0.5
-    wf = []
-    int_time = t[1] - t[0]
-    print(f"<Waterfall> Nch: {numch}, tau: {int_time}, N: {len(t)}")
-    for i in range(len(Rxfreq)-1):
-        pn = noisedist(Tsys, bw, int_time, numch)
-        this_ch = int(chnum[i])
-        smear = (Rxfreq[i+1] - Rxfreq[i])/bw
-        if smear == 0.0:
-            smear = minsmear
-        elif abs(smear) < minsmear:
-            smear = minsmear * np.sign(smear)
-        for j in range(this_ch, this_ch+int(smear), int(np.sign(smear))):
-            pn[j] += Rxpwr[i]/abs(smear)
-        wf.append(pn)
-    pn = noisedist(Tsys, bw, int_time, numch)
-    this_ch = int(chnum[-1])
-    pn[this_ch] += Rxpwr[-1]
-    wf.append(pn)
-    wf = np.array(wf)
-    return ch, wf
+def waterfall(t, Rxfreq, r, pwr=1.0/1000.0, Tsys=50.0, bw=1.0, minsmear=4.0, flo=None, fhi=None):
+    return Waterfall(t=t, Rxfreq=Rxfreq, r=r, pwr=pwr, Tsys=Tsys, bw=bw, minsmear=minsmear,
+                     flo=flo, fhi=fhi)
+
+
+class Waterfall:
+    def __init__(self, t, Rxfreq, r, pwr=1.0/1000.0, Tsys=50.0, bw=1.0, minsmear=4.0,
+                 flo=None, fhi=None):
+        """
+        Parameters
+        ----------
+        t : list/array of float
+            Times in sec
+        Rxfreq : list/array of float
+            Doppler shifted frequency [Hz]
+        r : list/array of float
+            Distance to transmitter [m]
+        pwr : float
+            EIRP [W]
+        Tsys : float
+            System temperature [K]
+        bw : float
+            Bandwidth [Hz]
+        """
+        if r is None:
+            self.pwr = {0: [pwr] * len(Rxfreq)}
+        else:
+            self.pwr = {0: pwr / (4.0 * np.pi * r**2)}
+        self.t = {0: t}
+        self.f = {0: Rxfreq}
+        self.auto_ctr = 1
+        self.r = r
+        self.bw = bw
+        self.Tsys = Tsys
+        self.minsmear = minsmear
+        if flo is None:
+            self.flo = 3.0*Rxfreq.min()/2.0 - Rxfreq.max()/2.0
+        else:
+            self.flo = flo
+        if fhi is None:
+            self.fhi = 3.0*Rxfreq.max()/2.0 - Rxfreq.min()/2.0
+        else:
+            self.fhi = fhi
+        self.numch = int((self.fhi - self.flo)/bw)
+        self.ch = np.linspace(self.flo, self.fhi, self.numch)
+        self.wf = []
+        self.tstart = t[0]
+        self.int_time = t[1] - t[0]
+        print("<Waterfall>")
+        print(f"Nch: {self.numch}, tau: {self.int_time}, N: {len(t)}")
+        print(f"flo: {self.flo}, fhi: {self.fhi}")
+        for i in range(len(Rxfreq)):
+            self.wf.append(noisedist(Tsys, bw, self.int_time, self.numch))
+        self.wf = np.array(self.wf)
+        self.add_signal(key=0)
+
+    def add_signal(self, t=None, f=None, p=None, key=None):
+        if key is None:
+            key = self.auto_ctr
+        self.auto_ctr += 1
+        if t is None:
+            t = self.t[0]
+        else:
+            if np.fabs((t[1] - t[0]) - self.int_time) / self.int_time > 0.1:
+                print("Timing doesn't match - skipping adding signal.")
+                return
+            self.t[key] = t
+        if f is None:
+            f = self.f[0]
+        else:
+            self.f[key] = f
+        if p is None:
+            p = self.pwr[0]
+        else:
+            if self.r is None:
+                self.pwr[key] = [p] * len(self.f)
+            else:
+                self.pwr[key] = p / (4.0 * np.pi * self.r**2)
+        chnum = (f - self.flo)/self.bw
+        tbin = (t - self.tstart)/self.int_time
+        for i, (_t, _f, _p) in enumerate(zip(t, f, p)):
+            this_time = int(tbin[i])
+            if this_time > len(f) - 2:
+                this_time = len(f) - 2
+            this_chan = int(chnum[i])
+            smear = (f[this_time+1] - f[this_time])/self.bw
+            if smear == 0.0:
+                smear = self.minsmear
+            elif abs(smear) < self.minsmear:
+                smear = self.minsmear * np.sign(smear)
+            for k in range(this_chan, this_chan+int(smear), int(np.sign(smear))):
+                self.wf[this_time, k] += p[this_time]/abs(smear)
 
 
 def _split(i, lon, lat, alt):
