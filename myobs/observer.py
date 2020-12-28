@@ -165,28 +165,41 @@ class Pointing(ephem.BaseEphem):
                           np.sin(self.dec)*self.icrs.v.z)
         self.dbydt('icrs.Ddot', smooth=None, unwrap=False)
 
-    def waterfall(self, f, ref='gc', r=None, pwr=1.5e-21, Tsys=50.0, bw=1.0, minsmear=4.0,
-                  flo=None, fhi=None):
+        # if ref.startswith('g'):
+        #     self.Ddot = self.gcrs.Ddot
+        # else:
+        #     self.Ddot = self.icrs.Ddot
+        # self.doppler = (self.Ddot / self.c0) * f
+
+    def setup_waterfall(self, t=None, flo=-2000.0, fhi=2000.0, bw=1.0, Tsys=50.0, minsmear=4.0):
         """
-        Generate waterfall.
+        Generate waterfall noise background
 
         Parameters
         ----------
-        f : float
-            frequency in Hz
-        ref : str
-            gc/bc for geocentric/barycentric
+        t : array of Time or None
+            Total range of times in sec
+        flo : float
+            Lowest frequency in Hz
+        fhi : float
+            Highest frequency in Hz
+        bw : float
+            Bandwidth [Hz]
+        Tsys : float
+            System temperature [K]
+        minsmear : float/int
+            Minimum number of "smear channels"
         """
         from . import transmitters
-        if ref.startswith('g'):
-            self.Ddot = self.gcrs.Ddot
-        else:
-            self.Ddot = self.icrs.Ddot
-        self.doppler = (self.Ddot / self.c0) * f
-        self.t = self.elapsed('sec')
-        self.wf = transmitters.Waterfall(t=self.t, Rxfreq=self.doppler.value,
-                                         r=r, pwr=pwr, Tsys=Tsys, bw=bw, minsmear=minsmear,
-                                         flo=flo, fhi=fhi)
+        if t is not None:
+            self.times = t
+        self.t_wf = self.elapsed('sec')
+        self.wf = transmitters.Waterfall(t=self.t_wf, flo=flo, fhi=fhi, bw=bw,
+                                         Tsys=Tsys, minsmear=minsmear,)
+
+    def add_to_waterfall(self, f, Ddot, p=1.5e-21, r=None, key=None):
+        fdop = (Ddot / self.c0) * f
+        self.wf.add_signal(fdop, p=p, r=r, t=self.t_wf, key=None)
 
     def xyz2pointing(self, x, y, z, times=None, toffset=None, el=None):
         """

@@ -19,43 +19,30 @@ def waterfall(t, Rxfreq, r, pwr=1.0/1000.0, Tsys=50.0, bw=1.0, minsmear=4.0, flo
 
 
 class Waterfall:
-    def __init__(self, t, Rxfreq, r, pwr=1.0/1000.0, Tsys=50.0, bw=1.0, minsmear=4.0,
-                 flo=None, fhi=None):
+    def __init__(self, t, flo, fhi, bw=1.0, Tsys=50.0, minsmear=4.0):
         """
         Parameters
         ----------
         t : list/array of float
-            Times in sec
-        Rxfreq : list/array of float
-            Doppler shifted frequency [Hz]
-        r : list/array of float
-            Distance to transmitter [m]
-        pwr : float
-            EIRP [W]
-        Tsys : float
-            System temperature [K]
+            Total range of times in sec
+        flo : float
+            Lowest frequency in Hz
+        fhi : float
+            Highest frequency in Hz
         bw : float
             Bandwidth [Hz]
+        Tsys : float
+            System temperature [K]
+        minsmear : float/int
+            Minimum number of "smear channels"
         """
-        if r is None:
-            self.pwr = {0: [pwr] * len(Rxfreq)}
-        else:
-            self.pwr = {0: pwr / (4.0 * np.pi * r**2)}
-        self.t = {0: t}
-        self.f = {0: Rxfreq}
-        self.auto_ctr = 1
-        self.r = r
+        self.tfull = t
+        self.auto_ctr = 0
         self.bw = bw
         self.Tsys = Tsys
         self.minsmear = minsmear
-        if flo is None:
-            self.flo = 3.0*Rxfreq.min()/2.0 - Rxfreq.max()/2.0
-        else:
-            self.flo = flo
-        if fhi is None:
-            self.fhi = 3.0*Rxfreq.max()/2.0 - Rxfreq.min()/2.0
-        else:
-            self.fhi = fhi
+        self.flo = flo
+        self.fhi = fhi
         self.numch = int((self.fhi - self.flo)/bw)
         self.ch = np.linspace(self.flo, self.fhi, self.numch)
         self.wf = []
@@ -65,36 +52,36 @@ class Waterfall:
         print("<Waterfall>")
         print(f"Nch: {self.numch}, tau: {self.int_time}, N: {len(t)}")
         print(f"flo: {self.flo}, fhi: {self.fhi}")
-        for i in range(len(Rxfreq)):
+        for i in range(len(t)):
             self.wf.append(noisedist(Tsys, bw, self.int_time, self.numch))
         self.wf = np.array(self.wf)
-        self.add_signal(key=0)
+        self.t = {}
+        self.f = {}
+        self.pwr = {}
 
-    def add_signal(self, t=None, f=None, p=None, key=None):
+    def add_signal(self, f, p=1.5e-21, r=None, t=None, key=None):
         if key is None:
             key = self.auto_ctr
         self.auto_ctr += 1
         if t is None:
-            t = self.t[0]
+            t = self.tfull
+        if len(f) != len(t):
+            print("Invalid number of spectra - skipping adding signal.")
+            return
+        if np.fabs(t[1] - t[0] - self.int_time) / self.int_time > 0.05:
+            print("Timing doesn't match - skipping adding signal.")
+            return
+        self.t[key] = t
+        self.f[key] = f
+        if r is None:
+            self.pwr[key] = [p] * len(f)
         else:
-            if np.fabs((t[1] - t[0]) - self.int_time) / self.int_time > 0.1:
-                print("Timing doesn't match - skipping adding signal.")
-                return
-            self.t[key] = t
-        if f is None:
-            f = self.f[0]
-        else:
-            self.f[key] = f
-        if p is None:
-            p = self.pwr[0]
-        else:
-            if self.r is None:
-                self.pwr[key] = [p] * len(self.f)
-            else:
-                self.pwr[key] = p / (4.0 * np.pi * self.r**2)
+            self.pwr[key] = p / (4.0 * np.pi * r**2)
+        p = self.pwr[key]
+
         chnum = (f - self.flo)/self.bw
         tbin = (t - self.tstart)/self.int_time
-        for i, (_t, _f, _p) in enumerate(zip(t, f, p)):
+        for i in range(len(f)):
             this_time = int(tbin[i])
             if this_time > len(f) - 2:
                 this_time = len(f) - 2
@@ -106,6 +93,14 @@ class Waterfall:
                 smear = self.minsmear * np.sign(smear)
             for k in range(this_chan, this_chan+int(smear), int(np.sign(smear))):
                 self.wf[this_time, k] += p[this_time]/abs(smear)
+
+    def plot_waterfall(self):
+        import matplotlib.pyplot as plt
+        plt.figure('waterfall')
+        plt.imshow(self.wf, extent=[self.flo, self.fhi, self.tfull[-1], self.tfull[0]])
+        plt.xlabel('Channel offset (Hz)')
+        plt.ylabel('Time (sec)')
+        plt.axis('auto')
 
 
 def _split(i, lon, lat, alt):
