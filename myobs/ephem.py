@@ -47,7 +47,7 @@ class BaseEphem:
                 setattr(self, par, [])
 
     def elapsed(self, unit='hour'):
-        elpsd = self.times.jd - self.times[0].jd
+        elpsd = (self.times.jd - self.times[0].jd)
         if unit == 'hour':
             elpsd *= 24.0
         elif unit.startswith('m'):

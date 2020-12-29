@@ -90,10 +90,14 @@ class Waterfall:
             for k in range(this_chan, this_chan+int(smear), int(np.sign(smear))):
                 self.wf[this_time, k] += p[this_time]/abs(smear)
 
-    def plot_waterfall(self):
+    def plot_waterfall(self, figname='waterfall', log=False):
         import matplotlib.pyplot as plt
-        plt.figure('waterfall')
-        plt.imshow(self.wf, extent=[self.flo, self.fhi, self.tfull[-1], self.tfull[0]],
+        plt.figure(figname)
+        if log:
+            show = np.log10(self.wf)
+        else:
+            show = self.wf
+        plt.imshow(show, extent=[self.flo, self.fhi, self.tfull[-1], self.tfull[0]],
                    origin='upper')
         plt.xlabel('Channel offset (Hz)')
         plt.ylabel('Time (sec)')
@@ -114,9 +118,9 @@ class Moving(ephem.BaseEphem):
         """
         Moving transmitter, ignore antenna movement as negligible.
         """
+        super().__init__()
         self.freq = f
         self.date = date  # Not used, but could if wanted "real" datetimes.
-        self.initall()
 
     def observatory(self, name, lon=None, lat=None, alt=None):
         self.obs = observer.Pointing(name=name, lat=lat, lon=lon, alt=alt)
@@ -248,7 +252,7 @@ class Local(ephem.BaseEphem):
         H  m - alt of rotation point; Parkes~18
         R  m - length of rotation arm; Parkes~34
         """
-        self.initall()
+        super().__init__()
         self.freq = f  # Hz - Frequency
         self.E, self.N, self.H, self.R = E, N, H, R
         self.X2 = E*E + N*N + H*H + R*R
