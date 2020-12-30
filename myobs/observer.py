@@ -165,12 +165,6 @@ class Pointing(ephem.BaseEphem):
                           np.sin(self.dec)*self.icrs.v.z)
         self.dbydt('icrs.Ddot', smooth=None, unwrap=False)
 
-        # if ref.startswith('g'):
-        #     self.Ddot = self.gcrs.Ddot
-        # else:
-        #     self.Ddot = self.icrs.Ddot
-        # self.doppler = (self.Ddot / self.c0) * f
-
     def setup_waterfall(self, t=None, flo=-2000.0, fhi=2000.0, bw=1.0, Tsys=50.0, minsmear=4.0):
         """
         Generate waterfall noise background

@@ -73,7 +73,7 @@ class Track(ephem.BaseEphem):
         self.rates(freq)
         self.subsat()
 
-    def location(self, name, lon=None, lat=None, alt=None):
+    def set_location(self, name, lon=None, lat=None, alt=None):
         """Make a location instance."""
         self.location = observer.Pointing(name, lon, lat, alt)
         self.loc = Namespace(x=self.location.loc.x,
@@ -83,7 +83,7 @@ class Track(ephem.BaseEphem):
     def view(self, name=None, lon=None, lat=None, alt=None):
         """Compute distance, enu, az/el and if ever viewable."""
         if name is not None:
-            self.location(name, lon, lat, alt)
+            self.set_location(name, lon, lat, alt)
         self.R = Namespace(x=(self.x-self.loc.x),
                            y=(self.y-self.loc.y),
                            z=(self.z-self.loc.z))

@@ -33,26 +33,20 @@ class Waterfall:
         """
         self.tfull = t
         self.auto_ctr = 0
-        self.bw = bw
-        self.Tsys = Tsys
+        self.bw, self.Tsys = bw, Tsys
         self.minsmear = minsmear
-        self.flo = flo
-        self.fhi = fhi
+        self.flo, self.fhi = flo, fhi
         self.numch = int((self.fhi - self.flo)/bw)
         self.ch = np.linspace(self.flo, self.fhi, self.numch)
-        self.wf = []
-        self.tstart = t[0]
-        self.tstop = t[-1]
-        self.int_time = t[1] - t[0]
+        self.tstart, self.tstop, self.int_time = t[0], t[-1], (t[1] - t[0])
         print("<Waterfall setup>")
         print(f"\tNch: {self.numch}, Ntimes: {len(t)}")
         print(f"\tflo: {self.flo:.2f} Hz, fhi: {self.fhi:.2f} Hz, int_time: {self.int_time:.1f} s")
+        self.wf = []
         for i in range(len(t)):
             self.wf.append(noisedist(Tsys, bw, self.int_time, self.numch))
         self.wf = np.array(self.wf)
-        self.t = {}
-        self.f = {}
-        self.pwr = {}
+        self.t, self.f, self.pwr = {}, {}, {}
 
     def add_signal(self, f, p=1.5e-21, r=None, t=None, key=None):
         if key is None:
