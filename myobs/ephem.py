@@ -32,6 +32,7 @@ class BaseEphem:
             radot, decdot, azdot, eldot:  deg/sec (Quantity)
             x, y, z:  m (Quantity)
             xdot, ydot, zdot, Ddot:  m/s (Quantity)
+            Ddotdot: m/s/s (Quantity)
         """
         self.initall()
         self._E = None  # Class archive for interp
