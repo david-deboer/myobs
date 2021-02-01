@@ -127,7 +127,7 @@ class BaseEphem:
         self.dt[0] = self.dt[1]
         self.dt = np.array(self.dt) * u.second
 
-    def _smrt(self, arr, smooth):
+    def smooth_array(self, arr, smooth):
         try:
             anit = arr.unit
         except AttributeError:
@@ -164,7 +164,7 @@ class BaseEphem:
             _param = np.unwrap(getattr(ns, par))
         else:
             _param = getattr(ns, par)
-        _param = self._smrt(_param, smooth)
+        _param = self.smooth_array(_param, smooth)
         for i, _pp in enumerate(_param[1:]):
             getattr(ns, deriv).append((_pp - _param[i])/self.dt[i+1])
         getattr(ns, deriv)[0] = getattr(ns, deriv)[1]

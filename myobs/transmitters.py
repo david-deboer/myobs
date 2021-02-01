@@ -120,15 +120,16 @@ class Moving(ephem.BaseEphem):
         self.obs = observer.Pointing(name=name, lat=lat, lon=lon, alt=alt)
 
     def calc_doppler_drift(self, smooth=10, drift_smooth=10):
-        vel = self._smrt(self.Ddot, smooth)  # additional smoothing in velocity
+        vel = self.smooth_array(self.Ddot, smooth)  # additional smoothing in velocity
         self.doppler = (vel/self.c0) * self.freq
         self.drift = [0.0]
         for i in range(1, len(self.doppler)):
             self.drift.append(self.doppler[i].value-self.doppler[i-1].value)
         self.drift[0] = self.drift[1]
-        self.drift = self._smrt(np.array(self.drift), drift_smooth) / self.dt.value
+        self.drift = self.smooth_array(np.array(self.drift), drift_smooth) / self.dt.value
 
-    def trajectory(self, lon, lat, alt, utc=12.0, speed=None, total_time=None, dt=10.0, smooth=10):
+    def trajectory(self, lon, lat, alt, utc=12.0, speed=None, total_time=None,
+                   dt=10.0, smooth=10, traj_smooth=50):
         """
         Take a list of waypoints and compute trajectory every dt sec over a great circle.
 
@@ -199,7 +200,7 @@ class Moving(ephem.BaseEphem):
             lon1, lon2, dlon, lat1, lat2, dlat, dalt = _split(i, lon, lat, alt)
             _altinc = self.waypt.distance[i] * np.sin(np.arctan2(dalt, Rearth[i]*ca[i]))
             N_time = int(np.floor(dt_waypt / dt))
-            if np.fabs(N_time) < 1.0:
+            if np.fabs(N_time) < 2.0:
                 continue
             _f = np.linspace(0.0, 1.0-1.0/N_time, N_time)
             _ta, _tb = np.sin((1.0 - _f)*ca[i]) / np.sin(ca[i]), np.sin(_f*ca[i]) / np.sin(ca[i])
@@ -213,8 +214,8 @@ class Moving(ephem.BaseEphem):
             self.traj.alt = np.append(self.traj.alt, alt[i-1] + _f * _altinc)
             self.waypoint_indices.append(len(self.traj.utc)-1)
         self.waypt.utc = utc
-        self.traj.lon = np.rad2deg(self.traj.lon)
-        self.traj.lat = np.rad2deg(self.traj.lat)
+        self.traj.lon = self.smooth_array(np.rad2deg(self.traj.lon), traj_smooth)
+        self.traj.lat = self.smooth_array(np.rad2deg(self.traj.lat), traj_smooth)
         self.traj.loc = EarthLocation(lon=self.traj.lon*u.deg, lat=self.traj.lat*u.deg,
                                       height=self.traj.alt*u.m)
         delta_x = self.traj.loc.x - self.obs.loc.x
