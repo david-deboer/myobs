@@ -87,7 +87,14 @@ class Pointing(ephem.BaseEphem):
                     return
             else:
                 self.name = name
-        self.loc = EarthLocation(lat=lat*u.deg, lon=lon*u.deg, height=(alt+alt_offset)*u.m)
+        else:
+            self.name = None
+            self.loc = None
+            self.lon = None
+            self.lat = None
+            self.alt = None
+        if self.name is not None:
+            self.loc = EarthLocation(lat=lat*u.deg, lon=lon*u.deg, height=(alt+alt_offset)*u.m)
         self.altaz = None
         self.wf = None
 

@@ -114,6 +114,7 @@ class Track(ephem.BaseEphem):
             dd = self.doppler[i] - self.doppler[i-1]
             self.drift.append(dd/dt)
         self.drift[0] = self.drift[1]
+        self.drift = u.quantity.Quantity(self.drift)
 
     def subsat(self):
         """Calculate the subsatellite point.  self.lon/self.lat"""
