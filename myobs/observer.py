@@ -164,9 +164,9 @@ class Pointing(ephem.BaseEphem):
             print("Barycenter data begins after pointing data - CHECK MORE.")
         self.icrs = Namespace(v=Namespace(x=None, y=None, z=None), Ddot=None, Ddotdot=[0.0])
         bary.at(self.times)
-        self.icrs.v.x = self.gcrs.v.x + bary.xdot
-        self.icrs.v.y = self.gcrs.v.y + bary.ydot
-        self.icrs.v.z = self.gcrs.v.z + bary.zdot
+        self.icrs.v.x = bary.xdot + self.gcrs.v.x
+        self.icrs.v.y = bary.ydot + self.gcrs.v.y
+        self.icrs.v.z = bary.zdot + self.gcrs.v.z
         self.icrs.Ddot = (np.cos(self.ra)*np.cos(self.dec)*self.icrs.v.x +
                           np.sin(self.ra)*np.cos(self.dec)*self.icrs.v.y +
                           np.sin(self.dec)*self.icrs.v.z)
