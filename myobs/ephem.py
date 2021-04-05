@@ -1,5 +1,5 @@
 from astropy import units as u
-from astropy.coordinates import Angle
+from astropy.coordinates import Angle, SkyCoord
 import numpy as np
 from . import dateutil
 from astropy.convolution import convolve, Gaussian1DKernel
@@ -75,6 +75,11 @@ class BaseEphem:
         if angv is None:
             angv = getattr(self, ang)
         setattr(self, ang, to_Angle(angv, angle_unit))
+
+    def to_separation(self, a1_1, a1_2, a2_1, a2_2):
+        c1 = SkyCoord(a1_1, a1_2)
+        c2 = SkyCoord(a2_1, a2_2)
+        return c1.separation(c2)
 
     def interp(self, par, times):
         """
