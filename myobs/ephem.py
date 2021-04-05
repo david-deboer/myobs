@@ -18,6 +18,14 @@ def to_Time(times, toffset=None):
     return dateutil.get_astropytime(times, toffset)
 
 
+def to_separation(c1, c2):
+    if not isinstance(c1, SkyCoord):
+        c1 = SkyCoord(c1[0], c1[1])
+    if not isinstance(c2, SkyCoord):
+        c2 = SkyCoord(c2[0], c2[1])
+    return c1.separation(c2)
+
+
 class BaseEphem:
     param = ['times', 'ra', 'dec', 'az', 'el', 'x', 'y', 'z', 'D', 'dt',
              'radot', 'decdot', 'azdot', 'eldot', 'xdot', 'ydot', 'zdot',
@@ -75,11 +83,6 @@ class BaseEphem:
         if angv is None:
             angv = getattr(self, ang)
         setattr(self, ang, to_Angle(angv, angle_unit))
-
-    def to_separation(self, a1_1, a1_2, a2_1, a2_2):
-        c1 = SkyCoord(a1_1, a1_2)
-        c2 = SkyCoord(a2_1, a2_2)
-        return c1.separation(c2)
 
     def interp(self, par, times):
         """
