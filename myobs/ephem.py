@@ -20,9 +20,9 @@ def to_Time(times, toffset=None):
 
 def to_separation(c1, c2):
     if not isinstance(c1, SkyCoord):
-        c1 = SkyCoord(c1[0], c1[1])
+        c1 = SkyCoord(to_Angle(c1[0]), to_Angle(c1[1]))
     if not isinstance(c2, SkyCoord):
-        c2 = SkyCoord(c2[0], c2[1])
+        c2 = SkyCoord(to_Angle(c2[0]), to_Angle(c2[1]))
     return c1.separation(c2)
 
 
