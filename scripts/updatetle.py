@@ -31,7 +31,7 @@ with open('master.dat', 'w') as master:
             outfile = a[0]+'.tle'
             print('Reading %s:  %s' % (lll, tlefiles[lll]))
             sat = requests.get(f"http://www.celestrak.com/NORAD/elements/{lll}").text.splitlines()
-            with open(outfile, 'w') as fp:
-                for line in sat:
-                    print(line, file=fp)
+            # with open(outfile, 'w') as fp:
+            #     for line in sat:
+            #         print(line, file=fp)
             print("{}:  {}".format(outfile, tlefiles[lll]), file=master)
