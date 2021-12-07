@@ -29,7 +29,7 @@ def updatetle(base_path, base_url):
                     num = line.split('[')[1].split(']')[0]
                 except IndexError:
                     num = '-'
-                tlefiles[word] = f"{description} [{num}]"
+                tlefiles[word] = "{} [{}]".format(description, num)
                 break
 
     with open(path.join(base_path, 'master.dat'), 'w') as master:
