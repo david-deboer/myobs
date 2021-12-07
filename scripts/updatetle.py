@@ -1,12 +1,18 @@
 #! /usr/bin/env python
 import requests
 from os import path
+import argparse
+
+ap = argparse.ArgumentParser()
+ap.add_argument('--base-url', dest='base_url', help="Base url for tles",
+                default='http://www.celestrak.com/NORAD/elements/')
+ap.add_argument('--base-path', dest='base_path', help="Base path for tles",
+                default='.')
+args = ap.parse_args()
 
 
-base_path = 'http://www.celestrak.com/NORAD/elements/'
-
-if __name__ == '__main__':
-    master_file = requests.get(path.join(base_path, 'master.asp'))
+def updatetle(base_path, base_url):
+    master_file = requests.get(path.join(base_url, 'master.asp'))
     master = master_file.text.splitlines()
     tlefiles = {}
 
@@ -25,7 +31,7 @@ if __name__ == '__main__':
                 tlefiles[word] = f"{description} [{num}]"
                 break
 
-    with open('master.dat', 'w') as master:
+    with open(path.join(base_path, 'master.dat'), 'w') as master:
         for lll in tlefiles:
             useThis = True
             for ig in ignore:
@@ -35,8 +41,12 @@ if __name__ == '__main__':
                 a = lll.split('.')
                 outfile = a[0]+'.tle'
                 print('Reading %s:  %s' % (lll, tlefiles[lll]))
-                sat = requests.get(path.join(base_path, lll)).text.splitlines()  # noqa
-                with open(outfile, 'w') as fp:
+                sat = requests.get(path.join(base_url, lll)).text.splitlines()  # noqa
+                with open(path.join(base_path, outfile), 'w') as fp:
                     for line in sat:
                         print(line, file=fp)
                 print("{}:  {}".format(outfile, tlefiles[lll]), file=master)
+
+
+if __name__ == '__main__':
+    updatetle(base_path=args.base_path, base_url=args.base_url)
