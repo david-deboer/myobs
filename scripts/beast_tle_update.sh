@@ -1,6 +1,6 @@
 #!/bin/bash
-
+cd ~/myobs
 CURRENTDATE=`date +"%Y-%m-%d %T"`
-GCOMMSG='git commit -C ~/myobs "TLE update '$CURRENTDATE'"'
+GCOMMSG='git commit "TLE update '$CURRENTDATE'"'
 eval $GCOMMSG
 git push origin main
