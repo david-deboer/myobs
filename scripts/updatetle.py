@@ -15,6 +15,7 @@ def updatetle(base_path, base_url):
     master_file = requests.get(path.join(base_url, 'master.asp'))
     master = master_file.text.splitlines()
     tlefiles = {}
+    base_path = path.expanduser(base_path)
 
     ignore = ['debris', 'cesium']
 
