@@ -5,11 +5,6 @@
 
 from setuptools import setup
 import glob
-import shutil
-from os.path import expanduser
-
-bin_dir = expanduser("~/opt/miniconda3/bin")
-shutil.copy("src/satpos", bin_dir)
 
 setup_args = {
     'name': "myobs",
@@ -18,10 +13,12 @@ setup_args = {
     'author': "David DeBoer",
     'author_email': "ddeboer@berkeley.edu",
     'version': '0.1',
-    'scripts': glob.glob('scripts/*'),
+    'scripts': glob.glob('scripts/*') + ['src/satpos'],
     'packages': ['myobs'],
-    # 'package_data': {"my_utils": ["data/*"]}
+    # 'package_data': {"myobs": ["data/*"]}
 }
 
 if __name__ == '__main__':
-    setup(**setup_args)
+    su_out = setup(**setup_args)
+    with open("TESTING.txt", 'w') as fp:
+        print(dir(su_out.command_obj), file=fp)

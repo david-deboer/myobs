@@ -1,7 +1,8 @@
 from astropy import units as u
 from astropy.coordinates import SkyCoord, AltAz, EarthLocation, Angle
 import numpy as np
-from . import dateutil, horizons, ephem
+from . import horizons, ephem
+from my_utils import my_dateutil as dateutil
 from argparse import Namespace
 
 

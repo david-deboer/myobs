@@ -1,7 +1,7 @@
 from astropy import units as u
 from astropy.coordinates import Angle, SkyCoord
 import numpy as np
-from . import dateutil
+from my_utils import my_dateutil as dateutil
 from astropy.convolution import convolve, Gaussian1DKernel
 from astropy import constants as Const
 from argparse import Namespace

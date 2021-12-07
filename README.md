@@ -1,6 +1,6 @@
 satpos  implements the sgp4 orbital tracking code (get ref to where the actual c code came from) and some other modules to look at the data.
 
-The TLE files are maintained in a repo under ../satpos/tle and may be updated using the script 'updatetle.py'.  Note that when updated should git commit -am 'TLE update on YY-MM-DD' so that old ones may be found via git log.
+The TLE files are maintained /tle and may be updated using the script 'updatetle.py' while in that directory.  Note that when updated should git commit -am 'TLE update on YY-MM-DD' so that old ones may be found via git log.
 
 --satpos--
 Given TLE (from a file, location set in satpos.cfg) it writes a file:

@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from myobs import dateutil
+from my_utils import my_dateutil as dateutil
 
 
 def simple(f=982e6, dec=-62, lat=-32):
